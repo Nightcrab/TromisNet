@@ -9,3 +9,5 @@ A blog post explaining an early version of this, which used the same DNN structu
 Since then, with hyper-parameter tuning, off-policy training with V-trace and other methods, the agent improved significantly. 
 
 Currently it achieves a 99.7% winrate, so new benchmarks are needed to measure its performance.
+
+The source contains 3 different python trainers. The best one, experimentally, is trainer_self.py which optimises GPU utilisation by doing off-policy rollouts during game simulations.

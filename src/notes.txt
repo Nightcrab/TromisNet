@@ -1,0 +1,142 @@
+TD learning + self play pseudocode
+
+    #how do we avoid updating the terminal value towards V of the start of the next game?
+    #when a move is made that results in a termination, move oldV towards the reward and ignore newVal (which should be ~0.5)
+    #we can do this by applying a mask to newV.detach().
+
+    evaluation: {
+        NN evaluation
+    }
+
+    reward: {
+        0, 0.5 or 1
+    }
+
+    trainer: {
+        p1.oldVal = 0.5
+        p2.oldVal = 0.5
+        repeat: {
+            states tensor
+            p1.nvd = p1.newVal.detach.mask
+            p2.nvd = p2.newVal.detach.mask
+            p1 evaluates - > p1.newVal, p1.pi
+            p1 makes move
+            p2 evaluates - > p2.newVal, p2.pi
+            p2 makes move
+            minimise (p1.newVal.detach - p1.oldVal) + (p2.newVal.detach - p2.oldVal)
+            minimise -1*(p1.newVal.detach - p1.oldVal.detach)*log(p1.pi)
+            p1.newVal -> p1.oldVal
+            p1.newVal -> p1.oldVal
+        }
+    }
+
+V-trace:
+
+    define two hyperparameters p, c.
+
+    1-step V trace defines target V as:
+
+    V(s) + min(p, pi(s,a)/mu(s,a))*V(s').
+
+    n-step V trace simply uses the constant c instead of p to clip the first n-1 V(s').
+
+bootstrapping issue
+
+    say we calculate V0, pi0, then V1
+
+    we calculate a parameter update using F(pi0, V1-V0) and G(V0, V1)
+
+    then we calculate pi1 and V2
+
+    update using F(pi1, V2-V1) and G(V1, V2)
+
+    however V1 is outdated.
+
+    what we need to do is recalculate V1 every time.
+
+
+hyper-parameters
+
+    convconv:
+
+    1.
+    #saw unusually fast improvement from 0.71 to 0.97 in 4 episodes
+    #the agent notably plateau'd at around 0.96
+
+    1 iteration on policy
+    5 iterations near-on-policy
+    100 * 2 iterations end of episode
+
+    1 step v-trace
+
+    batch size:2048
+    LR: 0.000005
+    AC weight: 1
+    entropy weight: 0.01
+
+
+    2.
+    #took the AI from 0.96 to 0.997
+
+    same as 1 except:
+
+    batch: 1028
+    LR: 0.0000035
+    entropy:0.001
+
+parallelisation
+
+    with 4 environment processes: 344 /s (over an episode)
+    with 1 process: 276 / s
+    with 8 processes and 4k batch size: 455 / s
+
+resconvnet
+
+    residual tower for self board, shallow convolutions for opponent's board.
+
+    left side:
+
+    input: 7x12
+    left side {
+        N residual blocks {
+            3x3 kernel, 128 filters
+            ReLU
+            3x3 kernel, 128 filters
+            batch normalisation
+            skip layer (addition)
+            ReLU
+        }
+        concatenation layer {
+            create 7x12x3 tensor {
+                current_piece
+                next_piece
+                garbage_meter
+            }
+            1x1 convolution (1 dimensional), 3 filters
+            tanh
+
+            append channels to res-tower output
+        }
+    }
+    right side {
+        N/2 residual blocks
+        1x1 convolution, 2 filters
+    }
+
+    append right side channels to left side
+
+    policy head {
+        1x1 convolution, 4 filters
+        flatten
+        batch normalise
+        ReLu
+        dense layer, 440 output
+    }
+    value head {
+        1x1 convolution, 2 filters
+        flatten
+        batch normalise
+        ReLu
+        dense layer, 1 output
+        sigmoid
+    }

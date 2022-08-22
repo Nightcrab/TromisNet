@@ -1,14 +1,24 @@
 import matplotlib.pyplot as plt
 
+def loadxy (path):
+    points = []
+    x = []
+    y = []
+    with open(path, 'r') as file:
+        points = file.readlines()
 
-points = []
+    for i in range(len(points)-1):
+        x_,y_ = [float(k) for k in points[i+1].split()]
+        x.append(x_)
+        y.append(y_)
 
-with open("plot1.txt", 'r') as file:
-    points = file.read().split()
+    return x, y
 
-points = [float(x) for x in points]
+points = loadxy("./rewards0.txt")
 
-plt.plot(points)
-plt.ylabel("loss")
-plt.xlabel("epoch")
+plt.plot(points[0], points[1], label="1024")
+plt.ylabel("win rate")
+plt.xlabel("updates")
+plt.legend()
+plt.title("batch sizes, lr=0.000008*sqrt(batch_size/512)")
 plt.show()

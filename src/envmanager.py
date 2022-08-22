@@ -1,4 +1,5 @@
 import torch
+from subprocess import Popen, PIPE, STDOUT
 
 def diff(a,b):
     try:
@@ -8,6 +9,9 @@ def diff(a,b):
         for i in range(len(a)):
             c.append(a[i]-b[i])
         return c
+
+def encode_move(state, x):
+    return int(state.type[state.active])*5*11*4 + int(x[0])*11*4 + int(x[1])*4 + int(x[2])
 
 class replayBuffer:
     def __init__(self,batch_size,depth):
@@ -82,3 +86,77 @@ class boardState:
         print("active pieces "+str(self.type))
         print(self.garbage)
         print("playing as "+str(self.active))
+
+class multiEnv:
+    def __init__(self):
+        self.pool = []
+
+    def startall(self, pool_size, batch_size):
+        self.batch_size = int(batch_size/pool_size)
+        for i in range(pool_size):
+            self.pool.append(Popen(["tritris.exe", str(self.batch_size)], stdout=PIPE, stdin=PIPE, stderr=PIPE))
+
+    def killall(self):
+
+        for i in range(len(self.pool)):
+            self.pool[i].kill()
+
+        self.pool = []
+
+    def nextTurn (self, batch_size, agents, terminate=False):
+
+        states = []
+        moves = ([],[])
+        rewards = [-1]*batch_size
+
+        for pi in range(len(self.pool)):
+
+            p = self.pool[pi]
+
+            for i in range(self.batch_size):
+                state = boardState(p.stdout.readline().decode().strip())
+                if state.terminal:
+                    rewards[i] = state.outcome
+                    state = boardState(p.stdout.readline().decode().strip())
+
+                states.append(state)
+
+                for k in range(2):
+                    m = p.stdout.readline().decode().strip().split("|")
+                    m.pop()
+
+                    for j in range(len(m)):
+                        m[j] = m[j].split(":")
+                        m[j] = [encode_move(state,[m[j][0],m[j][1],m[j][2]]), m[j][3]]
+
+                    moves[k].append(m)
+            #print("state got")
+
+        
+        mvs = [[],[]]
+        actions = [[],[]]
+        values = [[],[]]
+        lprob = [[],[]]
+        masks = [[],[]]
+        entr = []
+
+        mvs[0], actions[0], values[0], lprob[0], masks[0], t_state, entr = agents[0](states, moves[0],side=0)
+
+        t_state = []
+
+        mvs[1], actions[1], values[1], lprob[1], masks[1], t_state, entr = agents[1](states, moves[1],side=1)
+
+        #print(mvs)
+
+        for pi in range(len(self.pool)):
+            p = self.pool[pi]
+            #print("making moves on process "+str(pi))
+            for i in range(self.batch_size):
+                #print("move #"+str(i))
+                for k in range(2):
+                    move = mvs[k][self.batch_size*pi+i]
+                    move[1] = " ".join(list(move[1])) + " 6"
+                    p.stdin.write((move[1]+'\n').encode())
+            p.stdin.flush()
+
+        return values, rewards, lprob, masks, actions, t_state

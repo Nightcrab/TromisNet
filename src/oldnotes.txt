@@ -1,0 +1,51 @@
+neural network structure
+
+our output shape for the policy is as follows:
+
+each block of 4 5x11 planes describes all placements and rotations of a single piece
+hence for 2 pieces we have an output shape 5x11x8. For tetris this would be 10x21x28
+
+subgraph A : input 7 x 11 x 1 - conv layer, kernel=2 - maxpool - conv layer - conv layer - maxpool - flatten
+
+subgraph B: concat(A, input 7 x 1) - dense layer - output
+
+subgraph C: concat(A_0, A_1) - dense layer - output
+
+subgraph D:
+
+     C
+    / \
+   DL DL
+   /   \
+1x1x1   softmax
+           \
+          5x11x8
+
+
+how moves are encoded:
+2x5x11x4 wrapped into 5x11x8
+x y r p
+
+p*5*11*4 + x*11*4 + y*4 + r
+
+A mod 4 = r
+(A - r)/4 mod 11 = y
+(A - r)/4 - y)/11 mod 5 = x
+floor(A/220) = p
+
+
+reinforcement algorithm
+
+method 1: on policy, advantage policy gradient.
+
+    we use the equation 
+        d/dp loss = -d/dp J(p) = -E_T (d/dp log(pi(a,s)) A(a,s))  (1)
+
+    where E_T is estimated using Monte Carlo simulations
+    and A is estimated by the neural network.
+
+    specifically we generate B games using network K-1.
+    MSE of outcomes of games vs estimated value are used to train the value function.
+    this is summed with the policy loss from (1).
+
+    B should be large for a good estimate of E_T.

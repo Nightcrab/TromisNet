@@ -22,7 +22,7 @@
 
     The size of a board is also now 5x10 instead of 10x20.
 
-    There is a solid wall surrounding the entire matrix so the actual size is 7x12.
+    there is a solid wall surrounding the entire matrix so the actual size is 7x12.
 
     There are no wallkicks.
 
@@ -77,6 +77,15 @@ piece pieces[2][4];
 
 struct ArrayHasher {
     std::size_t operator()(const std::array<int, 3>& a) const {
+        std::size_t h = 0;
+
+        for (auto e : a) {
+            h ^= std::hash<int>{}(e)  + 0x9e3779b9 + (h << 6) + (h >> 2); 
+        }
+        return h;
+    }   
+
+    std::size_t operator()(const std::array<int, 84>& a) const {
         std::size_t h = 0;
 
         for (auto e : a) {
@@ -665,15 +674,15 @@ int main (int argc, char **argv) {
 
             if (!games[i].boards[0].alive && !games[i].boards[1].alive) {
                 out += "draw\n";
-                outf << "draw\n";
+                //outf << "draw\n";
             }
             else if (!games[i].boards[0].alive) {
                 out += "loss\n";
-                outf << "loss\n";
+                //outf << "loss\n";
             }
             else if (!games[i].boards[1].alive) {
                 out += "win\n";
-                outf << "win\n";
+                //outf << "win\n";
             }
 
             if (!games[i].boards[0].alive || !games[i].boards[1].alive) {
@@ -683,7 +692,7 @@ int main (int argc, char **argv) {
             }
 
             out += games[i].gameState() + "\n";
-            outf << games[i].display() << "\n";
+            //outf << games[i].display() << "\n";
             out += games[i].shortestPaths() + "\n";
             games[i].swap();
             out += games[i].shortestPaths() + "\n";

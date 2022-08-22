@@ -14,6 +14,7 @@ import deepagent as da
 
 MAX_ROLLOUT = 100
 max_rolls = 1
+PATH = "./checkpoints/conv_conv_0/"
 
 def encode_move(state, x):
     return int(state.type[state.active])*5*11*4 + int(x[0])*11*4 + int(x[1])*4 + int(x[2])
@@ -147,7 +148,7 @@ def main (a2c):
 
     #a2c.add_loss(rbuffer, 0)
     #a2c.optimize()
-    a2c.save("./checkpoints/main.pickle")
+    #a2c.save(PATH+"main.pickle")
 
     print("time to optimise: "+str(time.perf_counter()-tic))
     print("agent time: "+str(agent_time))
@@ -156,8 +157,8 @@ def main (a2c):
 def train():
     global outcomes
     a2c = da.ActorCritic()
-    a2c.load("./checkpoints/main.pickle")
-    for k in range(1):
+    a2c.load(PATH+"alt.pickle")
+    for k in range(1000):
         for i in range(1):
             main(a2c)
             print(outcomes)
@@ -166,7 +167,7 @@ def train():
             env_time = 0
             outcomes = [0,0,0]
 
-        #a2c.save("./checkpoints/backup"+str(random.choice(range(0,1000)))+".pickle")
+        #a2c.save(PATH+str(random.choice(range(0,1000)))+".pickle")
 
 def cpu_vs_gpu():
     import matplotlib.pyplot as plt

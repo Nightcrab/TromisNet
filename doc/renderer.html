@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="myCanvas" width="480" height="384" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<script>
+var c = document.getElementById("myCanvas");
+var ctx = c.getContext("2d");
+var board = `8           8  8     2     8 
+8   1 1 1   8  8   2 2     8 
+8 1 1 1 1   8  8           8 
+8 1     2   8  8           8 
+8 1 2   2 2 8  8           8 
+8 2 2     2 8  8           8 
+8   1   2 2 8  8     1     8 
+8   1     2 8  8     1     8 
+8   1   2 2 8  8   2 1     8 
+8 8 8 8 8   8  8   2 2 2   8 
+8 8 8 8   8 8  8 1 1 2   1 8 
+8 8 8 8 8 8 8  8 8 8 8 8 8 8 
+`.split("");
+
+for (i=0;i<12;i++){
+    board.splice(13+32*i,0,"k");
+    board.splice(31+32*i,0,"k");
+}
+
+console.log(board);
+height = 0;
+for (i=0;i<board.length;i+=2) {
+    console.log(board[i]);
+    ctx.beginPath();
+    if (board[i] == '\n') {
+        console.log("next line");
+        height += 32; continue;
+    }
+    ctx.fillStyle = "white";
+    if (board[i] == "8") {
+        ctx.fillStyle = "grey";
+    }
+    if (board[i] == "1") {
+        ctx.fillStyle = "blue";
+    }
+    if (board[i] == "2") {
+        ctx.fillStyle = "red";
+    }
+    ctx.rect((i/2 % 16)*32, height, 32, 32);
+    ctx.fill();
+}
+var image = c.toDataURL("image/png");
+document.write('<img src="'+image+'"/>');
+
+</script> 
+
+</body>
+</html>
